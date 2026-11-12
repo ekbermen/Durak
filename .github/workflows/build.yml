@@ -1,4 +1,4 @@
-name: DarkForge Hile Durak (Final - Root Fix)
+name: DarkForge Hile Durak (Final v3)
 
 on:
   push:
@@ -43,7 +43,6 @@ jobs:
         mkdir -p app/src/main/java/com/darkforge/hiledurak
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/drawable
-        mkdir -p app/src/main/res/values
 
     - name: 6. AndroidManifest.xml Yaz
       run: |
@@ -97,9 +96,10 @@ jobs:
 
         cat << 'EOF' > app/src/main/res/layout/activity_game.xml
         <?xml version="1.0" encoding="utf-8"?>
-        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#1A1A1A">
-        <TextView android:id="@+id/title_game" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DURAK OYUNU BAŞLATILDI" android:textColor="#00FF00" android:textSize="24sp" android:textStyle="bold" android:layout_centerInParent="true"/>
-        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Sağ üstteki DF logosuna tıklayarak hile menüsünü aç." android:textColor="#FFFFFF" android:textSize="14sp" android:layout_below="@id/title_game" android:layout_centerHorizontal="true" android:layout_marginTop="20dp"/>
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent" android:layout_height="match_parent" android:background="#0E2A1A">
+        <TextView android:id="@+id/title_game" android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="DURAK OYUNU" android:textColor="#FFD700" android:textSize="30sp" android:textStyle="bold" android:layout_centerHorizontal="true" android:layout_marginTop="50dp"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Rakip: DARKFORGE AI\nKartların: 6 (Kupa, Maça, Karo)\nSıra: Sende" android:textColor="#FFFFFF" android:textSize="18sp" android:layout_below="@id/title_game" android:layout_centerHorizontal="true" android:layout_marginTop="30dp" android:gravity="center"/>
+        <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="[ Sağ üstteki DF tuşuna basarak hile menüsünü aç ]" android:textColor="#00FF00" android:textSize="14sp" android:layout_alignParentBottom="true" android:layout_centerHorizontal="true" android:layout_marginBottom="50dp"/>
         </RelativeLayout>
         EOF
 
@@ -179,7 +179,8 @@ jobs:
         wm = (WindowManager) getSystemService(WINDOW_SERVICE);
         overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_menu, null);
         int LAYOUT_FLAG = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) ? WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
-        WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, LAYOUT_FLAG, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
+        int FLAGS = WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE | WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN;
+        WindowManager.LayoutParams params = new WindowManager.LayoutParams(WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT, LAYOUT_FLAG, FLAGS, PixelFormat.TRANSLUCENT);
         params.gravity = android.view.Gravity.TOP | android.view.Gravity.RIGHT;
         params.x = 0; params.y = 100;
         wm.addView(overlayView, params);
@@ -228,5 +229,5 @@ jobs:
     - name: 11. APK'yı Yükle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: HileDurak-Final
+        name: HileDurak-Final-v3
         path: HileDurak.apk
