@@ -1,4 +1,4 @@
-name: DarkForge Standalone Hile Durak Builder (FIXED)
+name: DarkForge Standalone Hile Durak Builder (FIXED v2)
 
 on:
   push:
@@ -33,15 +33,14 @@ jobs:
         echo "$HOME/android-sdk/platform-tools" >> $GITHUB_PATH
         echo "$HOME/android-sdk/build-tools/34.0.0" >> $GITHUB_PATH
 
-    - name: 4. Proje Yapısını Oluştur (Sıfırdan APK Projesi)
+    - name: 4. Proje Yapısını Oluştur
       run: |
-        echo "[DarkForge] Proje iskeleti oluşturuluyor..."
         mkdir -p app/src/main/java/com/darkforge/hiledurak
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/drawable
         mkdir -p app/src/main/res/values
 
-    - name: 5. AndroidManifest.xml (İzinler ve Servisler) Yaz
+    - name: 5. AndroidManifest.xml Yaz
       run: |
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
@@ -66,9 +65,8 @@ jobs:
         </manifest>
         EOF
 
-    - name: 6. Görsel Tasarımları ve Renkleri (Drawables, Styles) Yaz
+    - name: 6. Görsel Tasarımları (Drawable) Yaz
       run: |
-        mkdir -p app/src/main/res/mipmap-hdpi
         cat << 'EOF' > app/src/main/res/drawable/df_circle.xml
         <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
             <solid android:color="#DD000000"/>
@@ -77,9 +75,8 @@ jobs:
         </shape>
         EOF
 
-    - name: 7. Arayüz Tasarımlarını (Launcher, Oyun, Overlay) Yaz
+    - name: 7. Arayüz Tasarımlarını (Layout) Yaz
       run: |
-        # 1. Hile Başlat Ekranı
         cat << 'EOF' > app/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -116,7 +113,6 @@ jobs:
         </RelativeLayout>
         EOF
 
-        # 2. Oyun Ekranı (Durak Simülasyonu)
         cat << 'EOF' > app/src/main/res/layout/activity_game.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -144,7 +140,6 @@ jobs:
         </RelativeLayout>
         EOF
 
-        # 3. Overlay Menü (Yuvarlak Logo ve Açılır Pencere)
         cat << 'EOF' > app/src/main/res/layout/overlay_menu.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
@@ -185,7 +180,7 @@ jobs:
         </RelativeLayout>
         EOF
 
-    - name: 8. Java Kaynak Kodlarını (Main, Game, Overlay) Yaz
+    - name: 8. Java Kaynak Kodlarını Yaz
       run: |
         cat << 'EOF' > app/src/main/java/com/darkforge/hiledurak/MainActivity.java
         package com.darkforge.hiledurak;
@@ -326,34 +321,42 @@ jobs:
         }
         EOF
 
-    - name: 9. APK Derle (aapt2 + d8 + apksigner ile manuel build)
+    - name: 9. APK Derle (aapt2 + d8 + javac + apksigner)
       run: |
         echo "[DarkForge] Manuel APK derleme başlıyor..."
         
-        # Build araçlarının yolunu belirle
         BUILD_TOOLS="$HOME/android-sdk/build-tools/34.0.0"
         PLATFORM="$HOME/android-sdk/platforms/android-34/android.jar"
         
-        # 1. Java dosyalarını derle
-        mkdir -p app/build/classes
-        javac -source 17 -target 17 -bootclasspath "$PLATFORM" -classpath "$PLATFORM" -d app/build/classes app/src/main/java/com/darkforge/hiledurak/*.java
+        # 1. aapt2 ile kaynakları derle ve R.java oluştur
+        mkdir -p app/build/res app/build/gen
+        "$BUILD_TOOLS/aapt2" compile --dir app/src/main/res -o app/build/res/
+        "$BUILD_TOOLS/aapt2" link -o app/build/base.apk -I "$PLATFORM" \
+          --manifest app/src/main/AndroidManifest.xml \
+          --java app/build/gen \
+          app/build/res/*.flat \
+          --auto-add-overlay
         
-        # 2. D8 ile dex'e çevir
+        # 2. R.java dosyasını doğru paket dizinine kopyala
+        mkdir -p app/build/gen/com/darkforge/hiledurak
+        cp app/build/gen/com/darkforge/hiledurak/R.java app/build/gen/com/darkforge/hiledurak/ 2>/dev/null || true
+        
+        # 3. Java dosyalarını derle (Java 8 hedefiyle, android.jar classpath olarak)
+        mkdir -p app/build/classes
+        javac -source 8 -target 8 -bootclasspath "$PLATFORM" -classpath "$PLATFORM" \
+          -d app/build/classes \
+          app/src/main/java/com/darkforge/hiledurak/*.java \
+          app/build/gen/com/darkforge/hiledurak/R.java
+        
+        # 4. D8 ile dex'e çevir
         mkdir -p app/build/dex
         "$BUILD_TOOLS/d8" --lib "$PLATFORM" --output app/build/dex app/build/classes/com/darkforge/hiledurak/*.class
-        
-        # 3. aapt2 ile kaynakları derle
-        mkdir -p app/build/res
-        "$BUILD_TOOLS/aapt2" compile --dir app/src/main/res -o app/build/res/
-        
-        # 4. aapt2 ile APK paketle (Manifest ve Kaynaklar)
-        "$BUILD_TOOLS/aapt2" link -o app/build/base.apk -I "$PLATFORM" --manifest app/src/main/AndroidManifest.xml --java app/build/gen app/build/res/*.flat --auto-add-overlay
         
         # 5. Dex'i APK'ya ekle
         cd app/build
         zip -j base.apk dex/classes.dex
         
-        # 6. İmzala (Debug keystore oluşturup imzalıyoruz)
+        # 6. Keystore oluştur ve imzala
         keytool -genkey -v -keystore df_key.jks -alias darkforge \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -storepass darkforge123 -keypass darkforge123 \
