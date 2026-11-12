@@ -1,4 +1,4 @@
-name: DarkForge Standalone Hile Durak (Icon + ASCII Logo)
+name: DarkForge Hile Durak (Root Fix - A05 Compatible)
 
 on:
   push:
@@ -25,7 +25,6 @@ jobs:
         echo -e "\e[31m"
         figlet -f slant "DarkForge"
         echo -e "\e[0m"
-        echo "[DarkForge] Cyber Weapon Builder Hazır. İkon Çizimi ve Derleme Başlıyor..."
 
     - name: 4. Android SDK Komut Satırı Araçlarını Manuel Kur
       run: |
@@ -46,38 +45,25 @@ jobs:
         mkdir -p app/src/main/res/layout
         mkdir -p app/src/main/res/drawable
         mkdir -p app/src/main/res/values
+        mkdir -p app/src/main/res/mipmap-anydpi-v26
 
-    - name: 6. Uygulama Dış İkonunu (Vector) Kodla Çiz
+    - name: 6. Dış İkonu ve Manifest'i Yaz (KÖKTEN FİX)
       run: |
-        echo "[DarkForge] Dış ikon (Kart ve Şimşek) kodla çiziliyor..."
-        # Saf XML ile kırmızı-siyah bir kart ve şimşek logosu çiziyoruz
+        # İkon vektörü
         cat << 'EOF' > app/src/main/res/drawable/app_icon.xml
         <vector xmlns:android="http://schemas.android.com/apk/res/android"
             android:width="108dp"
             android:height="108dp"
             android:viewportWidth="108"
             android:viewportHeight="108">
-            <!-- Siyah Arka Plan -->
-            <path
-                android:fillColor="#111111"
-                android:pathData="M0,0h108v108h-108z" />
-            <!-- Kırmızı Kart Şekli -->
-            <path
-                android:fillColor="#FF0000"
-                android:pathData="M34,20 L74,20 A10,10 0 0,1 84,30 L84,78 A10,10 0 0,1 74,88 L34,88 A10,10 0 0,1 24,78 L24,30 A10,10 0 0,1 34,20 Z" />
-            <!-- Kartın İçi (Siyah) -->
-            <path
-                android:fillColor="#222222"
-                android:pathData="M30,28 L78,28 A6,6 0 0,1 84,34 L84,74 A6,6 0 0,1 78,80 L30,80 A6,6 0 0,1 24,74 L24,34 A6,6 0 0,1 30,28 Z" />
-            <!-- Ortadaki Beyaz Şimşek -->
-            <path
-                android:fillColor="#FFFFFF"
-                android:pathData="M58,38 L42,56 L52,56 L48,72 L66,52 L54,52 Z" />
+            <path android:fillColor="#111111" android:pathData="M0,0h108v108h-108z" />
+            <path android:fillColor="#FF0000" android:pathData="M34,20 L74,20 A10,10 0 0,1 84,30 L84,78 A10,10 0 0,1 74,88 L34,88 A10,10 0 0,1 24,78 L24,30 A10,10 0 0,1 34,20 Z" />
+            <path android:fillColor="#222222" android:pathData="M30,28 L78,28 A6,6 0 0,1 84,34 L84,74 A6,6 0 0,1 78,80 L30,80 A6,6 0 0,1 24,74 L24,34 A6,6 0 0,1 30,28 Z" />
+            <path android:fillColor="#FFFFFF" android:pathData="M58,38 L42,56 L52,56 L48,72 L66,52 L54,52 Z" />
         </vector>
         EOF
 
-    - name: 7. AndroidManifest.xml Yaz (İkon Bağlantısı Dahil)
-      run: |
+        # Manifest (Kökten çözüm: minSdk ve targetSdk eklendi)
         cat << 'EOF' > app/src/main/AndroidManifest.xml
         <?xml version="1.0" encoding="utf-8"?>
         <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -85,6 +71,8 @@ jobs:
             android:versionCode="1"
             android:versionName="1.0">
             
+            <!-- Galaxy A05 için SDK ve İzinler -->
+            <uses-sdk android:minSdkVersion="26" android:targetSdkVersion="34" />
             <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
             
             <application
@@ -111,8 +99,7 @@ jobs:
         </manifest>
         EOF
 
-    - name: 8. Görsel Tasarımları (Yuvarlak Buton) Yaz
-      run: |
+        # Yuvarlak buton tasarımı
         cat << 'EOF' > app/src/main/res/drawable/df_circle.xml
         <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
             <solid android:color="#DD000000"/>
@@ -121,112 +108,60 @@ jobs:
         </shape>
         EOF
 
-    - name: 9. Arayüz Tasarımlarını (Layout) Yaz
+    - name: 7. Arayüz Tasarımlarını (Layout) Yaz
       run: |
         cat << 'EOF' > app/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#0A0A0A"
-            android:gravity="center">
-            <TextView
-                android:id="@+id/title"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="DARKFORGE"
-                android:textColor="#FF0000"
-                android:textSize="40sp"
-                android:textStyle="bold"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="100dp"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CYBER WEAPON v1.0"
-                android:textColor="#00FF00"
-                android:layout_below="@id/title"
-                android:layout_centerHorizontal="true"/>
-            <Button
-                android:id="@+id/btn_start"
-                android:layout_width="250dp"
-                android:layout_height="60dp"
-                android:text="HİLEYİ BAŞLAT"
-                android:textColor="#FFFFFF"
-                android:backgroundTint="#FF0000"
-                android:layout_centerInParent="true"
-                android:layout_marginTop="50dp"/>
+            android:layout_width="match_parent" android:layout_height="match_parent"
+            android:background="#0A0A0A" android:gravity="center">
+            <TextView android:id="@+id/title" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="DARKFORGE" android:textColor="#FF0000" android:textSize="40sp" android:textStyle="bold"
+                android:layout_centerHorizontal="true" android:layout_marginTop="100dp"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="CYBER WEAPON v1.0" android:textColor="#00FF00"
+                android:layout_below="@id/title" android:layout_centerHorizontal="true"/>
+            <Button android:id="@+id/btn_start" android:layout_width="250dp" android:layout_height="60dp"
+                android:text="HİLEYİ BAŞLAT" android:textColor="#FFFFFF" android:backgroundTint="#FF0000"
+                android:layout_centerInParent="true" android:layout_marginTop="50dp"/>
         </RelativeLayout>
         EOF
 
         cat << 'EOF' > app/src/main/res/layout/activity_game.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent"
-            android:background="#1A1A1A">
-            <TextView
-                android:id="@+id/title_game"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="DURAK OYUNU BAŞLATILDI"
-                android:textColor="#00FF00"
-                android:textSize="24sp"
-                android:textStyle="bold"
-                android:layout_centerInParent="true"/>
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+            android:layout_width="match_parent" android:layout_height="match_parent" android:background="#1A1A1A">
+            <TextView android:id="@+id/title_game" android:layout_width="wrap_content" android:layout_height="wrap_content"
+                android:text="DURAK OYUNU BAŞLATILDI" android:textColor="#00FF00" android:textSize="24sp"
+                android:textStyle="bold" android:layout_centerInParent="true"/>
+            <TextView android:layout_width="wrap_content" android:layout_height="wrap_content"
                 android:text="Sağ üstteki DF logosuna tıklayarak hile menüsünü aç."
-                android:textColor="#FFFFFF"
-                android:textSize="14sp"
-                android:layout_below="@id/title_game"
-                android:layout_centerHorizontal="true"
-                android:layout_marginTop="20dp"/>
+                android:textColor="#FFFFFF" android:textSize="14sp"
+                android:layout_below="@id/title_game" android:layout_centerHorizontal="true" android:layout_marginTop="20dp"/>
         </RelativeLayout>
         EOF
 
         cat << 'EOF' > app/src/main/res/layout/overlay_menu.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content">
-            <LinearLayout
-                android:id="@+id/menu_panel"
-                android:layout_width="220dp"
-                android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:background="#CC000000"
-                android:padding="10dp"
-                android:visibility="gone"
-                android:layout_above="@+id/logo_btn"
-                android:layout_alignParentRight="true">
-                <TextView
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:text="DARKFORGE MENÜ"
-                    android:textColor="#FF0000"
-                    android:textStyle="bold"
-                    android:gravity="center"
-                    android:paddingBottom="5dp"/>
+            android:layout_width="wrap_content" android:layout_height="wrap_content">
+            <LinearLayout android:id="@+id/menu_panel" android:layout_width="220dp" android:layout_height="wrap_content"
+                android:orientation="vertical" android:background="#CC000000" android:padding="10dp"
+                android:visibility="gone" android:layout_above="@+id/logo_btn" android:layout_alignParentRight="true">
+                <TextView android:layout_width="match_parent" android:layout_height="wrap_content"
+                    android:text="DARKFORGE MENÜ" android:textColor="#FF0000" android:textStyle="bold"
+                    android:gravity="center" android:paddingBottom="5dp"/>
                 <Button android:id="@+id/btn_money" android:layout_width="match_parent" android:layout_height="40dp" android:text="SINIRSIZ PARA" android:textSize="12sp" android:textColor="#00FF00"/>
                 <Button android:id="@+id/btn_cards" android:layout_width="match_parent" android:layout_height="40dp" android:text="KARTLARI GÖSTER" android:textSize="12sp" android:textColor="#00FF00"/>
                 <Button android:id="@+id/btn_lag" android:layout_width="match_parent" android:layout_height="40dp" android:text="RAKİBİ ENGELLE" android:textSize="12sp" android:textColor="#FF0000"/>
             </LinearLayout>
-            <Button
-                android:id="@+id/logo_btn"
-                android:layout_width="60dp"
-                android:layout_height="60dp"
-                android:text="DF"
-                android:textSize="20sp"
-                android:textStyle="bold"
-                android:textColor="#FFFFFF"
-                android:background="@drawable/df_circle"
-                android:layout_alignParentRight="true"/>
+            <Button android:id="@+id/logo_btn" android:layout_width="60dp" android:layout_height="60dp"
+                android:text="DF" android:textSize="20sp" android:textStyle="bold" android:textColor="#FFFFFF"
+                android:background="@drawable/df_circle" android:layout_alignParentRight="true"/>
         </RelativeLayout>
         EOF
 
-    - name: 10. Java Kaynak Kodlarını Yaz
+    - name: 8. Java Kaynak Kodlarını Yaz
       run: |
         cat << 'EOF' > app/src/main/java/com/darkforge/hiledurak/MainActivity.java
         package com.darkforge.hiledurak;
@@ -235,18 +170,12 @@ jobs:
         import android.os.Bundle;
         import android.view.View;
         import android.widget.Button;
-
         public class MainActivity extends Activity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                setContentView(R.layout.activity_main);
+            @Override protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState); setContentView(R.layout.activity_main);
                 Button btn = findViewById(R.id.btn_start);
                 btn.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        startActivity(new Intent(MainActivity.this, GameActivity.class));
-                    }
+                    @Override public void onClick(View v) { startActivity(new Intent(MainActivity.this, GameActivity.class)); }
                 });
             }
         }
@@ -259,29 +188,17 @@ jobs:
         import android.os.Bundle;
         import android.net.Uri;
         import android.provider.Settings;
-
         public class GameActivity extends Activity {
-            @Override
-            protected void onCreate(Bundle savedInstanceState) {
-                super.onCreate(savedInstanceState);
-                setContentView(R.layout.activity_game);
-                
+            @Override protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState); setContentView(R.layout.activity_game);
                 if (!Settings.canDrawOverlays(this)) {
                     Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
                     startActivityForResult(intent, 123);
-                } else {
-                    startService(new Intent(this, OverlayService.class));
-                }
+                } else { startService(new Intent(this, OverlayService.class)); }
             }
-            
-            @Override
-            protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+            @Override protected void onActivityResult(int requestCode, int resultCode, Intent data) {
                 super.onActivityResult(requestCode, resultCode, data);
-                if (requestCode == 123) {
-                    if (Settings.canDrawOverlays(this)) {
-                        startService(new Intent(this, OverlayService.class));
-                    }
-                }
+                if (requestCode == 123 && Settings.canDrawOverlays(this)) { startService(new Intent(this, OverlayService.class)); }
             }
         }
         EOF
@@ -298,54 +215,29 @@ jobs:
         import android.widget.Button;
         import android.widget.LinearLayout;
         import android.widget.Toast;
-
         public class OverlayService extends Service {
             private WindowManager wm;
             private View overlayView;
-
-            @Override
-            public IBinder onBind(Intent intent) { return null; }
-
-            @Override
-            public void onCreate() {
+            @Override public IBinder onBind(Intent intent) { return null; }
+            @Override public void onCreate() {
                 super.onCreate();
                 wm = (WindowManager) getSystemService(WINDOW_SERVICE);
                 overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_menu, null);
-
-                int LAYOUT_FLAG;
-                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
-                    LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
-                } else {
-                    LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_PHONE;
-                }
-
+                int LAYOUT_FLAG = (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) ?
+                        WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY : WindowManager.LayoutParams.TYPE_PHONE;
                 WindowManager.LayoutParams params = new WindowManager.LayoutParams(
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        WindowManager.LayoutParams.WRAP_CONTENT,
-                        LAYOUT_FLAG,
-                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
-                        PixelFormat.TRANSLUCENT);
-
+                        WindowManager.LayoutParams.WRAP_CONTENT, WindowManager.LayoutParams.WRAP_CONTENT,
+                        LAYOUT_FLAG, WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE, PixelFormat.TRANSLUCENT);
                 params.gravity = android.view.Gravity.TOP | android.view.Gravity.RIGHT;
-                params.x = 0;
-                params.y = 100;
-
+                params.x = 0; params.y = 100;
                 wm.addView(overlayView, params);
-
                 final LinearLayout menu = overlayView.findViewById(R.id.menu_panel);
                 Button logo = overlayView.findViewById(R.id.logo_btn);
-                
                 logo.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (menu.getVisibility() == View.GONE) {
-                            menu.setVisibility(View.VISIBLE);
-                        } else {
-                            menu.setVisibility(View.GONE);
-                        }
+                    @Override public void onClick(View v) {
+                        menu.setVisibility(menu.getVisibility() == View.GONE ? View.VISIBLE : View.GONE);
                     }
                 });
-
                 overlayView.findViewById(R.id.btn_money).setOnClickListener(new View.OnClickListener() {
                     public void onClick(View v) { Toast.makeText(getApplicationContext(), "Sınırsız Para Aktif!", Toast.LENGTH_SHORT).show(); }
                 });
@@ -356,53 +248,47 @@ jobs:
                     public void onClick(View v) { Toast.makeText(getApplicationContext(), "Rakip Engellendi!", Toast.LENGTH_SHORT).show(); }
                 });
             }
-
-            @Override
-            public void onDestroy() {
+            @Override public void onDestroy() {
                 super.onDestroy();
-                if (wm != null && overlayView != null) {
-                    wm.removeView(overlayView);
-                }
+                if (wm != null && overlayView != null) wm.removeView(overlayView);
             }
         }
         EOF
 
-    - name: 11. APK Derle (aapt2, d8, apksigner)
+    - name: 9. APK Derle (Kökten Fix: SDK Versiyonları Eklendi)
       run: |
-        echo "[DarkForge] Galaxy A05 için İkonlu APK derleniyor..."
-        
         BUILD_TOOLS="$HOME/android-sdk/build-tools/34.0.0"
         PLATFORM="$HOME/android-sdk/platforms/android-34/android.jar"
         
-        # 1. aapt2 ile kaynakları derle ve R.java oluştur
+        # 1. aapt2 ile derle (Hedef SDK 34 ve Min SDK 26 eklendi)
         mkdir -p app/build/res app/build/gen
         "$BUILD_TOOLS/aapt2" compile --dir app/src/main/res -o app/build/res/
         "$BUILD_TOOLS/aapt2" link -o app/build/base.apk -I "$PLATFORM" \
           --manifest app/src/main/AndroidManifest.xml \
           --java app/build/gen \
           app/build/res/*.flat \
-          --auto-add-overlay
+          --auto-add-overlay --min-sdk-version 26 --target-sdk-version 34
         
-        # 2. R.java dosyasını doğru yere kopyala
+        # 2. R.java kopyala
         mkdir -p app/build/gen/com/darkforge/hiledurak
         cp app/build/gen/com/darkforge/hiledurak/R.java app/build/gen/com/darkforge/hiledurak/ 2>/dev/null || true
         
-        # 3. Java dosyalarını derle
+        # 3. Java derle
         mkdir -p app/build/classes
         javac -source 8 -target 8 -bootclasspath "$PLATFORM" -classpath "$PLATFORM" \
           -d app/build/classes \
           app/src/main/java/com/darkforge/hiledurak/*.java \
           app/build/gen/com/darkforge/hiledurak/R.java
         
-        # 4. D8 ile dex'e çevir
+        # 4. d8 ile dex (Min API 26)
         mkdir -p app/build/dex
-        "$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 21 --output app/build/dex app/build/classes/com/darkforge/hiledurak/*.class
+        "$BUILD_TOOLS/d8" --lib "$PLATFORM" --min-api 26 --output app/build/dex app/build/classes/com/darkforge/hiledurak/*.class
         
         # 5. Dex'i APK'ya ekle
         cd app/build
         zip -j base.apk dex/classes.dex
         
-        # 6. Keystore oluştur ve imzala
+        # 6. İmzala (Kökten fix: V1, V2, V3 ve Hedef API 34 zorunlu kılındı)
         keytool -genkey -v -keystore df_key.jks -alias darkforge \
           -keyalg RSA -keysize 2048 -validity 10000 \
           -storepass darkforge123 -keypass darkforge123 \
@@ -410,13 +296,15 @@ jobs:
           
         "$BUILD_TOOLS/zipalign" -v -p 4 base.apk base_aligned.apk
         "$BUILD_TOOLS/apksigner" sign --ks df_key.jks --ks-pass pass:darkforge123 \
-          --key-pass pass:darkforge123 --min-sdk-version 21 \
+          --key-pass pass:darkforge123 \
+          --min-sdk-version 26 --max-sdk-version 34 \
+          --v1-signing-enabled true --v2-signing-enabled true --v3-signing-enabled true \
           --out HileDurak.apk base_aligned.apk
         
         cp HileDurak.apk $GITHUB_WORKSPACE/
 
-    - name: 12. Nihai APK'yı Yükle (Artifact)
+    - name: 10. Nihai APK'yı Yükle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: HileDurak-GalaxyA05-Icon
+        name: HileDurak-A05-KoktenFix
         path: HileDurak.apk
