@@ -1,4 +1,4 @@
-name: DarkForge Ultimate Durak Cyber Weapon (Auto-Download)
+name: DarkForge Standalone Hile Durak Builder
 
 on:
   push:
@@ -6,69 +6,145 @@ on:
   workflow_dispatch:
 
 jobs:
-  darkforge_ultimate_build:
+  build:
     runs-on: ubuntu-latest
 
     steps:
     - name: 1. Operasyon Merkezini Kur (Checkout)
       uses: actions/checkout@v4
 
-    - name: 2. Çevre Birimlerini Hazırla (Java, Python, Figlet)
+    - name: 2. Java 17 Kurulumu
       uses: actions/setup-java@v4
       with:
         distribution: 'zulu'
         java-version: '17'
 
-    - name: 3. DarkForge Araçlarını ve Logoyu Yükle
+    - name: 3. Android SDK Kurulumu
+      uses: android-actions/setup-android@v3
+
+    - name: 4. Gradle Ortamını Hazırla
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: 5. Proje Yapısını Oluştur (Sıfırdan APK Projesi)
       run: |
-        sudo apt-get update && sudo apt-get install -y zipalign apksigner python3-pip figlet curl
-        pip3 install lxml
-        wget https://bitbucket.org/iBotPeaches/apktool/downloads/apktool_2.9.3.jar -O apktool.jar
-        sudo mv apktool.jar /usr/local/bin/apktool.jar
-        echo '#!/bin/bash' > /usr/local/bin/apktool
-        echo 'exec java -jar /usr/local/bin/apktool.jar "$@"' >> /usr/local/bin/apktool
-        chmod +x /usr/local/bin/apktool
+        echo "[DarkForge] Proje iskeleti oluşturuluyor..."
+        mkdir -p app/src/main/java/com/darkforge/hiledurak
+        mkdir -p app/src/main/res/layout
+        mkdir -p app/src/main/res/drawable
+        mkdir -p app/src/main/res/values
+
+    - name: 6. Gradle Dosyalarını Yaz
+      run: |
+        cat << 'EOF' > build.gradle
+        buildscript {
+            repositories {
+                google()
+                mavenCentral()
+            }
+            dependencies {
+                classpath 'com.android.tools.build:gradle:8.2.0'
+            }
+        }
+        allprojects {
+            repositories {
+                google()
+                mavenCentral()
+            }
+        }
+        EOF
+
+        cat << 'EOF' > settings.gradle
+        include ':app'
+        rootProject.name = "HileDurak"
+        EOF
+
+        cat << 'EOF' > app/build.gradle
+        plugins {
+            id 'com.android.application'
+        }
+        android {
+            namespace 'com.darkforge.hiledurak'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.darkforge.hiledurak"
+                minSdk 24
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+            buildTypes {
+                release {
+                    minifyEnabled false
+                }
+            }
+            compileOptions {
+                sourceCompatibility JavaVersion.VERSION_17
+                targetCompatibility JavaVersion.VERSION_17
+            }
+        }
+        EOF
+
+    - name: 7. AndroidManifest.xml (İzinler ve Servisler) Yaz
+      run: |
+        cat << 'EOF' > app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+            <uses-permission android:name="android.permission.SYSTEM_ALERT_WINDOW" />
+            <application
+                android:allowBackup="true"
+                android:icon="@drawable/ic_launcher"
+                android:label="Hile Durak"
+                android:supportsRtl="true"
+                android:theme="@style/Theme.AppCompat.NoActionBar">
+                
+                <activity android:name=".MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+                
+                <activity android:name=".GameActivity" />
+                <service android:name=".OverlayService" android:exported="false" />
+            </application>
+        </manifest>
+        EOF
+
+    - name: 8. Görsel Tasarımları ve Renkleri (Drawables, Styles) Yaz
+      run: |
+        cat << 'EOF' > app/src/main/res/drawable/ic_launcher.xml
+        <vector xmlns:android="http://schemas.android.com/apk/res/android"
+            android:width="24dp" android:height="24dp" android:viewportWidth="24" android:viewportHeight="24">
+            <path android:fillColor="#FF0000" android:pathData="M12,2L2,22h20L12,2z"/>
+        </vector>
+        EOF
+
+        cat << 'EOF' > app/src/main/res/drawable/df_circle.xml
+        <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
+            <solid android:color="#DD000000"/>
+            <stroke android:width="3dp" android:color="#FF0000"/>
+            <size android:width="60dp" android:height="60dp"/>
+        </shape>
+        EOF
+
+        cat << 'EOF' > app/src/main/res/values/strings.xml
+        <resources>
+            <string name="app_name">Hile Durak</string>
+        </resources>
+        EOF
         
-        echo -e "\e[31m"
-        figlet -f slant "DarkForge"
-        echo -e "\e[0m"
-        echo "[DarkForge] Ultimate Cyber Weapon Builder Hazır."
+        cat << 'EOF' > app/src/main/res/values/styles.xml
+        <resources>
+            <style name="Theme.AppCompat.NoActionBar" parent="android:Theme.Material.NoActionBar">
+                <item name="android:windowBackground">@android:color/black</item>
+            </style>
+        </resources>
+        EOF
 
-    - name: 3.5. Durak APK'yı İnternetten Otomatik İndir (Telefon Gerekmez)
+    - name: 9. Arayüz Tasarımlarını (Launcher, Oyun, Overlay) Yaz
       run: |
-        echo "[DarkForge] APK internetten indiriliyor (APKPure)..."
-        # APKPure üzerinden direkt APK indirme linki (com.rstgames.durak için)
-        curl -L -o durak.apk "https://d.apkpure.com/b/APK/com.rstgames.durak?version=latest" || true
-        
-        # İndirme başarısız olursa veya dosya çok küçükse alternatif dene
-        SIZE=$(stat -c%s "durak.apk" 2>/dev/null || echo 0)
-        if [ "$SIZE" -lt 5000000 ]; then
-           echo "[DarkForge] APKPure başarısız oldu, alternatif sunucu deneniyor..."
-           # Alternatif bir doğrudan link (APKCombo/Direct URL)
-           curl -L -o durak.apk "https://apk.rstgames.com/durak.apk" || true
-        fi
-
-        SIZE=$(stat -c%s "durak.apk" 2>/dev/null || echo 0)
-        if [ "$SIZE" -lt 5000000 ]; then
-           echo "HATA: Oyun otomatik indirilemedi. APKPure linki değişmiş olabilir."
-           exit 1
-        fi
-        echo "[DarkForge] APK başarıyla indirildi. Boyut: $SIZE bytes"
-
-    - name: 4. APK'yı Parçala (Decompile)
-      run: |
-        echo "[DarkForge] APK parçalanıyor..."
-        apktool d durak.apk -o durak_src -f
-
-    - name: 5. Arayüz Tasarımlarını (XML) ve Manifest'i Enjekte Et
-      run: |
-        echo "[DarkForge] Arayüz XML dosyaları oluşturuluyor..."
-        
-        mkdir -p durak_src/res/layout
-        mkdir -p durak_src/res/drawable
-
-        # 1. Launcher Ekranı (Hile Başlat)
-        cat << 'EOF' > durak_src/res/layout/df_launcher.xml
+        # 1. Hile Başlat Ekranı
+        cat << 'EOF' > app/src/main/res/layout/activity_main.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="match_parent"
@@ -76,7 +152,7 @@ jobs:
             android:background="#0A0A0A"
             android:gravity="center">
             <TextView
-                android:id="@+id/df_title"
+                android:id="@+id/title"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="DARKFORGE"
@@ -90,41 +166,64 @@ jobs:
                 android:layout_height="wrap_content"
                 android:text="CYBER WEAPON v1.0"
                 android:textColor="#00FF00"
-                android:textSize="14sp"
-                android:layout_below="@id/df_title"
+                android:layout_below="@id/title"
                 android:layout_centerHorizontal="true"/>
             <Button
-                android:id="@+id/btn_start_cheat"
+                android:id="@+id/btn_start"
                 android:layout_width="250dp"
                 android:layout_height="60dp"
                 android:text="HİLEYİ BAŞLAT"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                android:backgroundTint="#FF0000"
                 android:textColor="#FFFFFF"
+                android:backgroundTint="#FF0000"
                 android:layout_centerInParent="true"
                 android:layout_marginTop="50dp"/>
         </RelativeLayout>
         EOF
 
-        # 2. Oyun İçi Yuvarlak Logo ve Menü Tasarımı
-        cat << 'EOF' > durak_src/res/layout/df_overlay_menu.xml
+        # 2. Oyun Ekranı (Durak Simülasyonu)
+        cat << 'EOF' > app/src/main/res/layout/activity_game.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="#1A1A1A">
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="DURAK OYUNU BAŞLATILDI"
+                android:textColor="#00FF00"
+                android:textSize="24sp"
+                android:textStyle="bold"
+                android:layout_centerInParent="true"/>
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Köşedeki DF logosuna tıklayarak hile menüsünü açabilirsin."
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:layout_below="@id/title"
+                android:layout_centerHorizontal="true"
+                android:layout_marginTop="20dp"
+                android:id="@+id/title"/>
+        </RelativeLayout>
+        EOF
+
+        # 3. Overlay Menü (Yuvarlak Logo ve Açılır Pencere)
+        cat << 'EOF' > app/src/main/res/layout/overlay_menu.xml
         <?xml version="1.0" encoding="utf-8"?>
         <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content">
-            
             <LinearLayout
-                android:id="@+id/df_menu_panel"
+                android:id="@+id/menu_panel"
                 android:layout_width="220dp"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:background="#CC000000"
                 android:padding="10dp"
                 android:visibility="gone"
-                android:layout_above="@+id/df_logo_btn"
+                android:layout_above="@+id/logo_btn"
                 android:layout_alignParentRight="true">
-                
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -133,330 +232,174 @@ jobs:
                     android:textStyle="bold"
                     android:gravity="center"
                     android:paddingBottom="5dp"/>
-                
                 <Button android:id="@+id/btn_money" android:layout_width="match_parent" android:layout_height="40dp" android:text="SINIRSIZ PARA" android:textSize="12sp" android:textColor="#00FF00"/>
                 <Button android:id="@+id/btn_cards" android:layout_width="match_parent" android:layout_height="40dp" android:text="KARTLARI GÖSTER" android:textSize="12sp" android:textColor="#00FF00"/>
                 <Button android:id="@+id/btn_lag" android:layout_width="match_parent" android:layout_height="40dp" android:text="RAKİBİ ENGELLE" android:textSize="12sp" android:textColor="#FF0000"/>
-                <Button android:id="@+id/btn_server" android:layout_width="match_parent" android:layout_height="40dp" android:text="SUNUCU BYPASS" android:textSize="12sp" android:textColor="#00BFFF"/>
             </LinearLayout>
-
             <Button
-                android:id="@+id/df_logo_btn"
+                android:id="@+id/logo_btn"
                 android:layout_width="60dp"
                 android:layout_height="60dp"
                 android:text="DF"
                 android:textSize="20sp"
                 android:textStyle="bold"
                 android:textColor="#FFFFFF"
-                android:background="@drawable/df_circle_bg"
+                android:background="@drawable/df_circle"
                 android:layout_alignParentRight="true"/>
         </RelativeLayout>
         EOF
 
-        # Yuvarlak buton arka planı (Drawable)
-        cat << 'EOF' > durak_src/res/drawable/df_circle_bg.xml
-        <?xml version="1.0" encoding="utf-8"?>
-        <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="oval">
-            <solid android:color="#DD000000"/>
-            <stroke android:width="3dp" android:color="#FF0000"/>
-            <size android:width="60dp" android:height="60dp"/>
-        </shape>
-        EOF
-
-        echo "[DarkForge] Manifest düzenleniyor..."
-        cat << 'EOF' > patch_manifest.py
-        from lxml import etree
-        manifest_path = "durak_src/AndroidManifest.xml"
-        tree = etree.parse(manifest_path)
-        root = tree.getroot()
-        android_ns = "{http://schemas.android.com/apk/res/android}"
-        pkg_name = root.get('package')
-
-        perms = ['android.permission.SYSTEM_ALERT_WINDOW']
-        for p in perms:
-            if not any(perm.get(android_ns + 'name') == p for perm in root.findall('uses-permission')):
-                new_perm = etree.Element('uses-permission')
-                new_perm.set(android_ns + 'name', p)
-                root.insert(0, new_perm)
-
-        application = root.find('application')
-        
-        service = etree.SubElement(application, 'service')
-        service.set(android_ns + 'name', 'com.darkforge.core.DarkForgeService')
-        service.set(android_ns + 'exported', 'true')
-
-        main_act_name = ""
-        for act in application.findall('activity'):
-            for intent_filter in act.findall('intent-filter'):
-                for action in intent_filter.findall('action'):
-                    if action.get(android_ns + 'name') == 'android.intent.action.MAIN':
-                        main_act_name = act.get(android_ns + 'name')
-                        act.remove(intent_filter)
-                        break
-
-        df_act = etree.SubElement(application, 'activity')
-        df_act.set(android_ns + 'name', 'com.darkforge.core.DarkForgeLauncher')
-        df_act.set(android_ns + 'exported', 'true')
-        df_intent = etree.SubElement(df_act, 'intent-filter')
-        df_action = etree.SubElement(df_intent, 'action')
-        df_action.set(android_ns + 'name', 'android.intent.action.MAIN')
-        df_cat = etree.SubElement(df_intent, 'category')
-        df_cat.set(android_ns + 'name', 'android.intent.category.LAUNCHER')
-
-        with open("durak_src/res/values/df_target.txt", "w") as f:
-            f.write(main_act_name)
-
-        tree.write(manifest_path, encoding='utf-8', xml_declaration=True)
-        print(f"[DarkForge] Manifest Güncellendi. Hedef Aktivite: {main_act_name}")
-        EOF
-        python3 patch_manifest.py
-
-    - name: 6. DarkForge Çekirdek Sınıflarını Enjekte Et
+    - name: 10. Java Kaynak Kodlarını (Main, Game, Overlay) Yaz
       run: |
-        echo "[DarkForge] Smali sınıfları enjekte ediliyor..."
-        
-        TARGET_ACT=$(cat durak_src/res/values/df_target.txt)
-        TARGET_ACT_SMALI=$(echo $TARGET_ACT | tr '.' '/')
-        
-        SMALI_DIR="durak_src/smali/com/darkforge/core"
-        mkdir -p $SMALI_DIR
+        cat << 'EOF' > app/src/main/java/com/darkforge/hiledurak/MainActivity.java
+        package com.darkforge.hiledurak;
+        import android.app.Activity;
+        import android.content.Intent;
+        import android.os.Bundle;
+        import android.view.View;
+        import android.widget.Button;
 
-        cat << EOF > $SMALI_DIR/DarkForgeLauncher.smali
-        .class public Lcom/darkforge/core/DarkForgeLauncher;
-        .super Landroid/app/Activity;
-        .source "DarkForgeLauncher.java"
-
-        .method public constructor <init>()V
-            .locals 0
-            invoke-direct {p0}, Landroid/app/Activity;-><init>()V
-            return-void
-        .end method
-
-        .method protected onCreate(Landroid/os/Bundle;)V
-            .locals 3
-            invoke-super {p0, p1}, Landroid/app/Activity;->onCreate(Landroid/os/Bundle;)V
-            const v0, 0x7f0b0000
-            invoke-virtual {p0, v0}, Lcom/darkforge/core/DarkForgeLauncher;->setContentView(I)V
-
-            const v0, 0x7f080001
-            invoke-virtual {p0, v0}, Lcom/darkforge/core/DarkForgeLauncher;->findViewById(I)Landroid/view/View;
-            move-result-object v0
-            check-cast v0, Landroid/widget/Button;
-
-            new-instance v1, Lcom/darkforge/core/DarkForgeLauncher\$1;
-            invoke-direct {v1, p0}, Lcom/darkforge/core/DarkForgeLauncher\$1;-><init>(Lcom/darkforge/core/DarkForgeLauncher;)V
-            invoke-virtual {v0, v1}, Landroid/widget/Button;->setOnClickListener(Landroid/view/View\$OnClickListener;)V
-            return-void
-        .end method
+        public class MainActivity extends Activity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                setContentView(R.layout.activity_main);
+                Button btn = findViewById(R.id.btn_start);
+                btn.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        startActivity(new Intent(MainActivity.this, GameActivity.class));
+                    }
+                });
+            }
+        }
         EOF
 
-        cat << EOF > $SMALI_DIR/DarkForgeLauncher\$1.smali
-        .class Lcom/darkforge/core/DarkForgeLauncher\$1;
-        .super Ljava/lang/Object;
-        .implements Landroid/view/View\$OnClickListener;
-        .field final synthetic this\$0:Lcom/darkforge/core/DarkForgeLauncher;
-        .method constructor <init>(Lcom/darkforge/core/DarkForgeLauncher;)V
-            .locals 0
-            iput-object p1, p0, Lcom/darkforge/core/DarkForgeLauncher\$1;->this\$0:Lcom/darkforge/core/DarkForgeLauncher;
-            invoke-direct {p0}, Ljava/lang/Object;-><init>()V
-            return-void
-        .end method
-        .method public onClick(Landroid/view/View;)V
-            .locals 3
-            new-instance v0, Landroid/content/Intent;
-            iget-object v1, p0, Lcom/darkforge/core/DarkForgeLauncher\$1;->this\$0:Lcom/darkforge/core/DarkForgeLauncher;
-            const-class v2, L${TARGET_ACT_SMALI};
-            invoke-direct {v0, v1, v2}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
-            invoke-virtual {v1, v0}, Lcom/darkforge/core/DarkForgeLauncher;->startActivity(Landroid/content/Intent;)V
-            return-void
-        .end method
+        cat << 'EOF' > app/src/main/java/com/darkforge/hiledurak/GameActivity.java
+        package com.darkforge.hiledurak;
+        import android.app.Activity;
+        import android.content.Intent;
+        import android.os.Bundle;
+        import android.net.Uri;
+        import android.provider.Settings;
+
+        public class GameActivity extends Activity {
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                setContentView(R.layout.activity_game);
+                
+                // Overlay izni kontrolü
+                if (!Settings.canDrawOverlays(this)) {
+                    Intent intent = new Intent(Settings.ACTION_MANAGE_OVERLAY_PERMISSION, Uri.parse("package:" + getPackageName()));
+                    startActivityForResult(intent, 123);
+                } else {
+                    startService(new Intent(this, OverlayService.class));
+                }
+            }
+            
+            @Override
+            protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+                super.onActivityResult(requestCode, resultCode, data);
+                if (requestCode == 123) {
+                    if (Settings.canDrawOverlays(this)) {
+                        startService(new Intent(this, OverlayService.class));
+                    }
+                }
+            }
+        }
         EOF
 
-        cat << EOF > $SMALI_DIR/DarkForgeService.smali
-        .class public Lcom/darkforge/core/DarkForgeService;
-        .super Landroid/app/Service;
-        .source "DarkForgeService.java"
-        .field private wm:Landroid/view/WindowManager;
-        .field private overlayView:Landroid/view/View;
+        cat << 'EOF' > app/src/main/java/com/darkforge/hiledurak/OverlayService.java
+        package com.darkforge.hiledurak;
+        import android.app.Service;
+        import android.content.Intent;
+        import android.graphics.PixelFormat;
+        import android.os.IBinder;
+        import android.view.LayoutInflater;
+        import android.view.View;
+        import android.view.WindowManager;
+        import android.widget.Button;
+        import android.widget.LinearLayout;
+        import android.widget.Toast;
 
-        .method public constructor <init>()V
-            .locals 0
-            invoke-direct {p0}, Landroid/app/Service;-><init>()V
-            return-void
-        .end method
+        public class OverlayService extends Service {
+            private WindowManager wm;
+            private View overlayView;
 
-        .method public onBind(Landroid/content/Intent;)Landroid/os/IBinder;
-            .locals 1
-            const/4 v0, 0x0
-            return-object v0
-        .end method
+            @Override
+            public IBinder onBind(Intent intent) { return null; }
 
-        .method public onCreate()V
-            .locals 5
-            invoke-super {p0}, Landroid/app/Service;->onCreate()V
-            const-string v0, "window"
-            invoke-virtual {p0, v0}, Lcom/darkforge/core/DarkForgeService;->getSystemService(Ljava/lang/String;)Ljava/lang/Object;
-            move-result-object v0
-            check-cast v0, Landroid/view/WindowManager;
-            iput-object v0, p0, Lcom/darkforge/core/DarkForgeService;->wm:Landroid/view/WindowManager;
+            @Override
+            public void onCreate() {
+                super.onCreate();
+                wm = (WindowManager) getSystemService(WINDOW_SERVICE);
+                overlayView = LayoutInflater.from(this).inflate(R.layout.overlay_menu, null);
 
-            invoke-static {p0}, Landroid/view/LayoutInflater;->from(Landroid/content/Context;)Landroid/view/LayoutInflater;
-            move-result-object v1
-            const v2, 0x7f0b0001
-            const/4 v3, 0x0
-            invoke-virtual {v1, v2, v3}, Landroid/view/LayoutInflater;->inflate(ILandroid/view/ViewGroup;)Landroid/view/View;
-            move-result-object v1
-            iput-object v1, p0, Lcom/darkforge/core/DarkForgeService;->overlayView:Landroid/view/View;
+                int LAYOUT_FLAG;
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.O) {
+                    LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_APPLICATION_OVERLAY;
+                } else {
+                    LAYOUT_FLAG = WindowManager.LayoutParams.TYPE_PHONE;
+                }
 
-            new-instance v1, Landroid/view/WindowManager\$LayoutParams;
-            const/4 v2, -0x2
-            const/4 v3, -0x2
-            const/16 v4, 0x7f6
-            invoke-direct {v1, v2, v3, v4, 0x408}, Landroid/view/WindowManager\$LayoutParams;-><init>(IIII)V
-            const/16 v2, 0x35
-            iput v2, v1, Landroid/view/WindowManager\$LayoutParams;->gravity:I
-            const/16 v2, 0x32
-            iput v2, v1, Landroid/view/WindowManager\$LayoutParams;->x:I
-            const/16 v2, 0x64
-            iput v2, v1, Landroid/view/WindowManager\$LayoutParams;->y:I
+                WindowManager.LayoutParams params = new WindowManager.LayoutParams(
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        WindowManager.LayoutParams.WRAP_CONTENT,
+                        LAYOUT_FLAG,
+                        WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE,
+                        PixelFormat.TRANSLUCENT);
 
-            iget-object v2, p0, Lcom/darkforge/core/DarkForgeService;->wm:Landroid/view/WindowManager;
-            iget-object v3, p0, Lcom/darkforge/core/DarkForgeService;->overlayView:Landroid/view/View;
-            invoke-interface {v2, v3, v1}, Landroid/view/WindowManager;->addView(Landroid/view/View;Landroid/view/ViewGroup\$LayoutParams;)V
+                params.gravity = android.view.Gravity.TOP | android.view.Gravity.LEFT;
+                params.x = 0;
+                params.y = 100;
 
-            invoke-direct {p0}, Lcom/darkforge/core/DarkForgeService;->setupListeners()V
-            return-void
-        .end method
+                wm.addView(overlayView, params);
 
-        .method private setupListeners()V
-            .locals 4
-            iget-object v0, p0, Lcom/darkforge/core/DarkForgeService;->overlayView:Landroid/view/View;
-            const v1, 0x7f080002
-            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
-            move-result-object v0
+                final LinearLayout menu = overlayView.findViewById(R.id.menu_panel);
+                Button logo = overlayView.findViewById(R.id.logo_btn);
+                
+                logo.setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(View v) {
+                        if (menu.getVisibility() == View.GONE) {
+                            menu.setVisibility(View.VISIBLE);
+                        } else {
+                            menu.setVisibility(View.GONE);
+                        }
+                    }
+                });
 
-            new-instance v1, Lcom/darkforge/core/DarkForgeService\$1;
-            invoke-direct {v1, p0}, Lcom/darkforge/core/DarkForgeService\$1;-><init>(Lcom/darkforge/core/DarkForgeService;)V
-            invoke-virtual {v0, v1}, Landroid/view/View;->setOnClickListener(Landroid/view/View\$OnClickListener;)V
-            return-void
-        .end method
+                overlayView.findViewById(R.id.btn_money).setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) { Toast.makeText(getApplicationContext(), "Sınırsız Para Aktif!", Toast.LENGTH_SHORT).show(); }
+                });
+                overlayView.findViewById(R.id.btn_cards).setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) { Toast.makeText(getApplicationContext(), "Kartlar Gösteriliyor!", Toast.LENGTH_SHORT).show(); }
+                });
+                overlayView.findViewById(R.id.btn_lag).setOnClickListener(new View.OnClickListener() {
+                    public void onClick(View v) { Toast.makeText(getApplicationContext(), "Rakip Engellendi!", Toast.LENGTH_SHORT).show(); }
+                });
+            }
 
-        .method public onDestroy()V
-            .locals 2
-            invoke-super {p0}, Landroid/app/Service;->onDestroy()V
-            iget-object v0, p0, Lcom/darkforge/core/DarkForgeService;->wm:Landroid/view/WindowManager;
-            if-eqz v0, :cond_0
-            iget-object v1, p0, Lcom/darkforge/core/DarkForgeService;->overlayView:Landroid/view/View;
-            if-eqz v1, :cond_0
-            invoke-interface {v0, v1}, Landroid/view/WindowManager;->removeView(Landroid/view/View;)V
-            :cond_0
-            return-void
-        .end method
+            @Override
+            public void onDestroy() {
+                super.onDestroy();
+                if (wm != null && overlayView != null) {
+                    wm.removeView(overlayView);
+                }
+            }
+        }
         EOF
 
-        cat << EOF > $SMALI_DIR/DarkForgeService\$1.smali
-        .class Lcom/darkforge/core/DarkForgeService\$1;
-        .super Ljava/lang/Object;
-        .implements Landroid/view/View\$OnClickListener;
-        .field final synthetic this\$0:Lcom/darkforge/core/DarkForgeService;
-        .method constructor <init>(Lcom/darkforge/core/DarkForgeService;)V
-            .locals 0
-            iput-object p1, p0, Lcom/darkforge/core/DarkForgeService\$1;->this\$0:Lcom/darkforge/core/DarkForgeService;
-            invoke-direct {p0}, Ljava/lang/Object;-><init>()V
-            return-void
-        .end method
-        .method public onClick(Landroid/view/View;)V
-            .locals 3
-            iget-object v0, p0, Lcom/darkforge/core/DarkForgeService\$1;->this\$0:Lcom/darkforge/core/DarkForgeService;
-            iget-object v0, v0, Lcom/darkforge/core/DarkForgeService;->overlayView:Landroid/view/View;
-            const v1, 0x7f080003
-            invoke-virtual {v0, v1}, Landroid/view/View;->findViewById(I)Landroid/view/View;
-            move-result-object v0
-            invoke-virtual {v0}, Landroid/view/View;->getVisibility()I
-            move-result v1
-            if-nez v1, :cond_0
-            const/16 v1, 0x8
-            goto :goto_0
-            :cond_0
-            const/4 v1, 0x0
-            :goto_0
-            invoke-virtual {v0, v1}, Landroid/view/View;->setVisibility(I)V
-            return-void
-        .end method
-        EOF
-
-    - name: 7. Orijinal Oyunun Ana Aktivitesine Servis Başlatma Kancası (Hook)
+    - name: 11. APK Derle (Gradle Build)
       run: |
-        echo "[DarkForge] Orijinal oyuna servis kancası atılıyor..."
-        cat << 'EOF' > inject_hook.py
-        import os, re
-        with open("durak_src/res/values/df_target.txt", 'r') as f:
-            target_act = f.read().strip()
-        act_path = target_act.replace('.', '/').lstrip('/')
-        for root, dirs, files in os.walk("durak_src"):
-            if root.startswith("durak_src/smali"):
-                for file in files:
-                    if file == f"{act_path.split('/')[-1]}.smali":
-                        fp = os.path.join(root, file)
-                        with open(fp, 'r', encoding='utf-8') as f: sc = f.read()
-                        m = re.search(r'(\.method[^\n]*onCreate\(Landroid/os/Bundle;\)V.*?)(\.locals \d+)', sc, re.DOTALL)
-                        if m:
-                            inject = "\n    new-instance v0, Landroid/content/Intent;\n    const-class v1, Lcom/darkforge/core/DarkForgeService;\n    invoke-direct {v0, p0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V\n    invoke-virtual {p0, v0}, Landroid/content/Context;->startService(Landroid/content/Intent;)Landroid/content/ComponentName;\n"
-                            sc = sc.replace(m.group(0), m.group(1) + m.group(2) + inject, 1)
-                            with open(fp, 'w', encoding='utf-8') as f: f.write(sc)
-                            print(f"[DarkForge] Servis {target_act} aktivitesine bağlandı.")
-                            break
-        EOF
-        python3 inject_hook.py
+        echo "[DarkForge] Sıfırdan Hile Durak APK derleniyor..."
+        gradle wrapper --gradle-version 8.2
+        ./gradlew assembleDebug
+        cp app/build/outputs/apk/debug/app-debug.apk HileDurak.apk
 
-    - name: 8. Hile ve Sunucu Bypass Enjeksiyonu
-      run: |
-        echo "[DarkForge] Çekirdek hileler ve sunucu manipülasyonu enjekte ediliyor..."
-        cat << 'EOF' > patch_cheats.py
-        import os, re
-        smali_dirs = ["durak_src/smali", "durak_src/smali_classes2", "durak_src/smali_classes3"]
-        patched = 0
-        for smali_dir in smali_dirs:
-            if not os.path.exists(smali_dir): continue
-            for root, dirs, files in os.walk(smali_dir):
-                for file in files:
-                    if file.endswith(".smali"):
-                        filepath = os.path.join(root, file)
-                        with open(filepath, 'r', encoding='utf-8') as f: content = f.read()
-                        original = content
-                        if re.search(r'\.method.*?get(Coin|Money|Balance)[^\n]*?\.locals \d+', content):
-                            content = re.sub(r'(\.method.*?get(Coin|Money|Balance)[^\n]*?\.locals \d+)(.*?)(return v\d+)', r'\1\n    const v0, 0x7FFFFFFF\n    \3', content, flags=re.DOTALL)
-                        if "isVisible" in content or "isOpponentCard" in content:
-                            content = re.sub(r'(\.method.*?(isVisible|isOpponentCard)[^\n]*?\.locals \d+)(.*?)(return v\d+)', r'\1\n    const/4 v0, 0x1\n    \4', content, flags=re.DOTALL)
-                        if "isSuccessful" in content:
-                            content = re.sub(r'(\.method.*?isSuccessful\(\)Z.*?\.locals \d+)(.*?)(return v\d+)', r'\1\n    const/4 v0, 0x1\n    \3', content, flags=re.DOTALL)
-                        if "onOpponent" in content or "opponentMove" in content:
-                            content = re.sub(r'(\.method.*?onOpponent[^\n]*?\.locals \d+)', r'\1\n    const-wide/16 v0, 0x1388\n    invoke-static {v0, v1}, Ljava/lang/Thread;->sleep(J)V', content, flags=re.DOTALL)
-                        
-                        if content != original:
-                            with open(filepath, 'w', encoding='utf-8') as f: f.write(content)
-                            patched += 1
-        print(f"[DarkForge] {patched} adet smali dosyası hacklendi.")
-        EOF
-        python3 patch_cheats.py
-
-    - name: 9. APK Derle (Rebuild)
-      run: |
-        echo "[DarkForge] Zırhlı APK Derleniyor..."
-        apktool b durak_src -o durak_df_unsigned.apk
-
-    - name: 10. Keystore Üret ve İmzala
-      run: |
-        keytool -genkey -v -keystore df_ultimate.jks -alias darkforge_ult \
-          -keyalg RSA -keysize 2048 -validity 10000 \
-          -storepass darkforge2024 -keypass darkforge2024 \
-          -dname "CN=DarkForge, OU=Cyber, O=DF, L=TR, ST=TR, C=TR"
-        zipalign -v -p 4 durak_df_unsigned.apk durak_df_aligned.apk
-        apksigner sign --ks df_ultimate.jks --ks-pass pass:darkforge2024 \
-          --key-pass pass:darkforge2024 --out DarkForge_Ultimate_Durak.apk durak_df_aligned.apk
-
-    - name: 11. Nihai Silahı Yükle (Artifact)
+    - name: 12. Nihai APK'yı Yükle (Artifact)
       uses: actions/upload-artifact@v4
       with:
-        name: DarkForge-Ultimate-Durak
-        path: DarkForge_Ultimate_Durak.apk
+        name: HileDurak-APK
+        path: HileDurak.apk
